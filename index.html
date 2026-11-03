@@ -1,0 +1,1134 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lista de Reservas</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📋</text></svg>">
+<style>
+  :root{
+    --primary:#2563eb; --primary-dark:#1d4ed8; --bg:#f3f6fb; --card:#fff; --border:#e5e9f2;
+    --text:#1e293b; --muted:#64748b; --success:#16a34a; --warning:#d97706; --danger:#dc2626;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,Inter,sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.4}
+  button,input,select,textarea{font:inherit;color:inherit}
+  button{cursor:pointer}
+  button:disabled{cursor:not-allowed;opacity:.55}
+  h2,h3{margin:0}
+  small{font-size:12px}
+  .muted{color:var(--muted)}
+  .small{font-size:13px}
+  .spacer{flex:1}
+  .dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--c,#94a3b8);flex:none}
+
+  /* ---------- Barra superior ---------- */
+  .topbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:14px;padding:10px 20px;background:linear-gradient(90deg,#1e40af,#2563eb);color:#fff;box-shadow:0 2px 10px rgba(30,64,175,.25);flex-wrap:wrap}
+  .brand{font-weight:800;font-size:18px;display:flex;gap:8px;align-items:center;white-space:nowrap}
+  .tabs{display:flex;gap:6px;margin:0 auto;flex-wrap:wrap;justify-content:center}
+  .tabs button{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.6);padding:7px 14px;border-radius:8px;font-weight:600}
+  .tabs button:hover{background:rgba(255,255,255,.12)}
+  .tabs button.active{background:#fff;color:var(--primary);border-color:#fff}
+  .status{display:flex;align-items:center;gap:10px;margin-left:auto}
+  .conn{font-size:12px;font-weight:600;padding:4px 10px;border-radius:99px;background:rgba(255,255,255,.15);white-space:nowrap}
+  .conn::before{content:'●';margin-right:5px}
+  .conn.online::before{color:#4ade80}
+  .conn.offline::before{color:#f87171}
+  .conn.conectando::before{color:#fbbf24;animation:pulso 1s infinite}
+  .online{display:flex;align-items:center;padding-left:6px}
+  .online small{margin-left:10px;opacity:.9;white-space:nowrap}
+  .avatar{width:28px;height:28px;border-radius:50%;background:var(--c);color:#fff;display:inline-grid;place-items:center;font-size:11px;font-weight:800;border:2px solid #fff;margin-left:-6px}
+  .avatar.yo{outline:2px solid #fff;outline-offset:1px}
+  .chip{background:#fff;color:var(--text);border:0;border-radius:99px;padding:5px 12px 5px 8px;font-weight:700;display:inline-flex;gap:8px;align-items:center;white-space:nowrap}
+  .chip:hover{background:#eef2ff}
+
+  /* ---------- Contenido ---------- */
+  main{max-width:1120px;margin:22px auto;padding:0 16px}
+  .panel{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px 18px 22px;box-shadow:0 1px 3px rgba(15,23,42,.05)}
+  .barra-fecha{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+  .titulo-fecha{font-size:20px;font-weight:800;margin-left:6px}
+  .titulo-fecha small{color:var(--muted);font-weight:600}
+  .resumen-dia{font-size:13px;color:var(--muted);font-weight:600}
+  input[type=date],input[type=time],input[type=number],input[type=text],input[type=search],input:not([type]),select,textarea{border:1px solid #cbd5e1;border-radius:8px;padding:8px 10px;background:#fff;min-width:0}
+  input:focus,select:focus,textarea:focus{outline:2px solid #93c5fd;border-color:var(--primary)}
+  .btn-icon{border:1px solid var(--border);background:#eef4ff;color:var(--primary);width:40px;height:38px;border-radius:8px;font-weight:700}
+  .btn-icon:hover{background:#dbeafe}
+  .btn-soft{border:1px solid var(--border);background:#eef4ff;color:var(--primary);padding:8px 14px;border-radius:8px;font-weight:600}
+  .btn-soft:hover{background:#dbeafe}
+  .btn-primary{border:0;background:var(--primary);color:#fff;padding:9px 16px;border-radius:8px;font-weight:700;box-shadow:0 1px 2px rgba(37,99,235,.3)}
+  .btn-primary:hover{background:var(--primary-dark)}
+  .btn-sm{padding:6px 12px;font-size:13px}
+  .btn-mini{border:1px solid var(--border);background:#fff;border-radius:7px;padding:4px 8px;font-size:13px}
+  .btn-mini:hover{background:#f1f5f9}
+  .btn-mini.danger:hover{background:#fee2e2;border-color:#fecaca}
+  .btn-danger-soft{border:1px solid #fecaca;background:#fef2f2;color:var(--danger);padding:8px 14px;border-radius:8px;font-weight:600}
+  .btn-danger-soft:hover{background:#fee2e2}
+  .vacio{padding:32px;text-align:center;color:var(--muted);border:1px dashed #cbd5e1;border-radius:12px;margin-top:12px}
+
+  /* tira de la semana (vista día) */
+  .strip{display:flex;gap:6px;overflow-x:auto;padding:2px 0 12px}
+  .strip button{flex:1;min-width:92px;border:1px solid var(--border);background:#fff;border-radius:10px;padding:6px 8px;text-align:center;line-height:1.2}
+  .strip button:hover{border-color:#93c5fd}
+  .strip button.sel{border-color:var(--primary);background:#eff6ff;box-shadow:inset 0 0 0 1px var(--primary)}
+  .strip button.hoy b{color:var(--primary)}
+  .strip button small{display:block;color:var(--muted);font-size:11px}
+  .strip button b{display:block;font-size:17px;line-height:1.1}
+  .strip button .ocup{display:block;font-weight:700;font-size:12px;color:var(--muted)}
+  .strip button .ocup.lleno{color:var(--danger)}
+
+  /* tarjeta de horario */
+  .horario{background:#fff;border:1px solid var(--border);border-radius:14px;margin:12px 0;overflow:hidden;box-shadow:0 1px 2px rgba(15,23,42,.04);break-inside:avoid}
+  .horario-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 16px;background:#eef4ff;border-bottom:1px solid var(--border);flex-wrap:wrap}
+  .horario.casi .horario-head{background:#fff7ed}
+  .horario.lleno .horario-head{background:#fef2f2}
+  .h-etiqueta{font-size:19px;font-weight:800;color:var(--primary)}
+  .horario.lleno .h-etiqueta{color:var(--danger)}
+  .h-hora{color:var(--muted);font-size:13px;margin-left:8px}
+  .h-estado{display:flex;align-items:center;gap:10px}
+  .h-cupos{font-weight:800;color:var(--primary)}
+  .horario.casi .h-cupos{color:var(--warning)}
+  .horario.lleno .h-cupos{color:var(--danger)}
+  .barra{width:90px;height:8px;background:#e2e8f0;border-radius:99px;overflow:hidden}
+  .barra-fill{height:100%;background:var(--success);border-radius:99px;transition:width .3s}
+  .horario.casi .barra-fill{background:var(--warning)}
+  .horario.lleno .barra-fill{background:var(--danger)}
+  .badge{font-size:11px;font-weight:800;padding:3px 9px;border-radius:99px;letter-spacing:.04em}
+  .badge-lleno{background:var(--danger);color:#fff}
+  .badge-casi{background:#fde68a;color:#92400e}
+  .horario.lleno .fila.ocupada{background:#fffafa}
+
+  /* tabla de filas */
+  .fila{display:grid;grid-template-columns:44px 1.8fr 1.2fr 1fr 1.4fr 120px;gap:8px;align-items:center;padding:9px 14px;border-bottom:1px solid var(--border);min-height:48px}
+  .fila:last-child{border-bottom:0}
+  .fila-cab{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:#f8fafc;padding:7px 14px;min-height:0}
+  .fila .num{color:var(--muted);font-weight:600}
+  .fila.libre em{color:#94a3b8}
+  .fila.libre.con-editor{background:#fffdf5}
+  .fila.ocupada:hover{background:#f8fafc}
+  .fila .acciones{display:flex;gap:6px;justify-content:flex-end}
+  .fila.ocupada .acciones{opacity:.3;transition:opacity .15s}
+  .fila.ocupada:hover .acciones,.fila.ocupada:focus-within .acciones{opacity:1}
+  .fila .por{display:flex;align-items:center;gap:7px;font-size:13px;color:#334155}
+  .fila .por small{color:var(--muted)}
+  .fila .meta{display:none}
+  .usuario{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0}
+  .usuario b{overflow-wrap:anywhere}
+
+  /* indicador "está reservando" */
+  .editando{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:600;color:var(--c,#d97706);background:#fff;border:1px dashed var(--c,#d97706);white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+  .editando b{white-space:nowrap}
+  .fila.libre .usuario{grid-column:2/-2}
+  @supports (background:color-mix(in srgb,red 10%,white)){.editando{background:color-mix(in srgb,var(--c,#d97706) 12%,white)}}
+  .pulso{animation:pulso 1.4s ease-in-out infinite}
+  @keyframes pulso{0%,100%{opacity:1}50%{opacity:.5}}
+
+  /* vista semanal */
+  .semana-wrap{overflow-x:auto;margin-top:10px;padding-bottom:6px}
+  .semana{display:grid;grid-template-columns:repeat(var(--cols),minmax(150px,1fr));gap:10px;min-width:min(100%,calc(var(--cols)*160px))}
+  .dia{background:#fff;border:1px solid var(--border);border-radius:12px;overflow:hidden;cursor:pointer;transition:border-color .15s,box-shadow .15s}
+  .dia:hover{border-color:var(--primary);box-shadow:0 2px 8px rgba(37,99,235,.12)}
+  .dia.sel{border-color:var(--primary)}
+  .dia-head{display:flex;justify-content:space-between;align-items:baseline;padding:8px 10px;background:#f1f5f9;font-size:13px;font-weight:600;color:var(--muted)}
+  .dia-head b{font-size:16px;color:var(--text)}
+  .dia.hoy .dia-head{background:var(--primary);color:#dbeafe}
+  .dia.hoy .dia-head b{color:#fff}
+  .dia-total{font-size:11px;color:var(--muted);text-align:center;padding:4px 0 8px}
+  .mini{margin:8px;border-radius:8px;padding:6px 8px;background:#f0fdf4;border:1px solid #bbf7d0;font-size:12px}
+  .mini.parcial{background:#eff6ff;border-color:#bfdbfe}
+  .mini.casi{background:#fffbeb;border-color:#fde68a}
+  .mini.lleno{background:#fef2f2;border-color:#fecaca}
+  .mini-head{display:flex;justify-content:space-between;font-weight:700}
+  .mini.lleno .mini-head{color:var(--danger)}
+  .mini-nombre{padding-left:7px;border-left:3px solid var(--c,#cbd5e1);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .mini-nombre.editando{display:block;border-radius:4px;padding:1px 6px;border-left-width:3px;font-size:11px}
+
+  /* usuarios */
+  .tabla.usuarios .fila{grid-template-columns:1.6fr 1.2fr 1.6fr 1.4fr 90px}
+  #buscar-usuarios{min-width:260px}
+
+  /* configuración */
+  .config h3{margin:26px 0 8px;font-size:16px;display:flex;align-items:center;gap:8px}
+  .config h3 .muted{font-weight:500;font-size:13px}
+  .tabla.config-horarios .fila{grid-template-columns:80px 1.4fr 1.2fr 100px 90px 70px}
+  .tabla.config-prof .fila{grid-template-columns:60px 2fr 90px 70px}
+  .tabla.config-prof input[type=color]{width:42px;height:34px;padding:2px;border:1px solid #cbd5e1;border-radius:8px;background:#fff}
+  .tabla.config-horarios input,.tabla.config-prof input:not([type=color]){width:100%}
+  .orden{display:flex;gap:4px}
+  .switch{position:relative;display:inline-block;width:42px;height:24px}
+  .switch input{opacity:0;width:0;height:0}
+  .switch i{position:absolute;inset:0;background:#cbd5e1;border-radius:99px;transition:.2s}
+  .switch i::before{content:'';position:absolute;width:18px;height:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
+  .switch input:checked+i{background:var(--success)}
+  .switch input:checked+i::before{transform:translateX(18px)}
+  .datos{display:flex;gap:10px;align-items:end;flex-wrap:wrap;padding:12px;border:1px solid var(--border);border-radius:12px;background:#f8fafc}
+  .datos label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
+  .datos.peligro{border-color:#fecaca;background:#fff7f7;margin-top:10px}
+  .info-box{padding:12px 14px;border-radius:12px;background:#f8fafc;border:1px solid var(--border);font-size:13px;line-height:1.6;overflow-wrap:anywhere}
+
+  /* diálogo */
+  dialog{border:0;border-radius:16px;padding:0;width:min(540px,94vw);box-shadow:0 20px 60px rgba(2,6,23,.35)}
+  dialog::backdrop{background:rgba(15,23,42,.45);backdrop-filter:blur(2px)}
+  .dlg-form{padding:18px 22px 20px;display:flex;flex-direction:column;gap:12px}
+  .dlg-head{display:flex;align-items:center;justify-content:space-between}
+  .dlg-head h3{font-size:19px}
+  .dlg-sub{color:var(--muted);font-weight:600;margin-top:-6px}
+  .dlg-form label{display:block;font-size:13px;font-weight:600;color:#334155}
+  .dlg-form label input,.dlg-form label select,.dlg-form label textarea{display:block;width:100%;margin-top:5px;font-weight:400;font-size:15px}
+  .req{color:var(--danger)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .dlg-cupos{padding:10px 12px;border-radius:10px;font-size:14px;border:1px solid}
+  .dlg-cupos.ok{background:#f0fdf4;border-color:#bbf7d0;color:#166534}
+  .dlg-cupos.casi{background:#fffbeb;border-color:#fde68a;color:#92400e}
+  .dlg-cupos.lleno{background:#fef2f2;border-color:#fecaca;color:#991b1b}
+  .aviso-otros{margin-top:6px;font-weight:600;line-height:1.5}
+  .aviso-otros .dot{margin:0 3px 0 4px;vertical-align:middle}
+  .dlg-error{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;padding:10px 12px;border-radius:10px;font-size:14px}
+  .dlg-foot{display:flex;gap:8px;align-items:center;margin-top:4px}
+  .lista-prof{display:grid;gap:8px}
+  .prof-btn{display:flex;align-items:center;gap:12px;padding:12px 14px;border:2px solid var(--border);border-radius:12px;background:#fff;font-weight:700;font-size:16px;text-align:left}
+  .prof-btn:hover{border-color:var(--c);background:#f8fafc}
+  .prof-btn .dot{width:14px;height:14px}
+
+  /* toasts */
+  #toasts{position:fixed;right:16px;bottom:16px;display:flex;flex-direction:column;gap:8px;z-index:100;max-width:min(400px,92vw)}
+  .toast{background:#0f172a;color:#fff;padding:11px 14px;border-radius:10px;border-left:4px solid var(--c,#3b82f6);font-size:14px;transform:translateY(10px);opacity:0;transition:all .25s;box-shadow:0 8px 24px rgba(2,6,23,.3)}
+  .toast.show{transform:none;opacity:1}
+  .toast.success{--c:#22c55e}.toast.error{--c:#ef4444}.toast.warning{--c:#f59e0b}
+
+  .solo-print{display:none}
+
+  /* ---------- Móvil ---------- */
+  @media (max-width:760px){
+    .topbar{padding:10px 12px;gap:8px}
+    .brand span{display:none}
+    .tabs{order:3;width:100%;margin:2px 0 0}
+    .tabs button{padding:6px 10px;font-size:13px}
+    .status{margin-left:auto}
+    .online small{display:none}
+    main{margin:12px auto}
+    .panel{padding:12px}
+    .titulo-fecha{font-size:17px;width:100%;margin-left:0}
+    .barra-fecha{gap:6px}
+    #fecha-input{flex:1;min-width:130px}
+    .btn-icon{width:36px;height:36px}
+    .resumen-dia{flex:1}
+    .fila{grid-template-columns:30px 1fr auto;gap:6px}
+    .fila-cab span:not(:first-child):not(:nth-child(2)){display:none}
+    .fila .programa,.fila .guia,.fila .por,.fila .rel{display:none}
+    .fila .meta{display:block;width:100%;font-size:12px;color:var(--muted)}
+    .fila .meta .dot{width:8px;height:8px;margin-right:3px}
+    .tabla.usuarios .fila{grid-template-columns:1fr auto}
+    .tabla.usuarios .fila span:nth-child(2),.tabla.usuarios .fila span:nth-child(3),.tabla.usuarios .fila span:nth-child(4),.tabla.usuarios .fila-cab span:not(:first-child){display:none}
+    .tabla.usuarios .fila .meta{display:block}
+    #buscar-usuarios{min-width:0;flex:1}
+    .tabla.config-horarios .fila{grid-template-columns:64px 1fr 1fr 70px 50px 40px;gap:4px;padding:8px 6px}
+    .tabla.config-horarios .fila-cab{display:none}
+    .tabla.config-prof .fila{grid-template-columns:50px 1fr 60px 40px;gap:4px}
+    .grid2{grid-template-columns:1fr}
+    .h-estado .barra{display:none}
+  }
+
+  /* ---------- Impresión ---------- */
+  @media print{
+    .no-print,.topbar,#toasts,dialog,.strip,.acciones{display:none !important}
+    body{background:#fff}
+    main{margin:0;max-width:none;padding:0}
+    .panel{box-shadow:none;border:0;padding:0}
+    .solo-print{display:block;font-size:18px;margin-bottom:8px}
+    .horario{margin:8px 0;box-shadow:none}
+    .fila{grid-template-columns:40px 1.8fr 1.2fr 1fr 1.4fr;padding:6px 10px;min-height:0}
+    .editando{display:none}
+  }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">📋 <span>Lista de Reservas</span></div>
+  <nav class="tabs" id="tabs">
+    <button data-tab="dia" class="active">Reservas del día</button>
+    <button data-tab="semana">Vista semanal</button>
+    <button data-tab="usuarios">Usuarios</button>
+    <button data-tab="config">Configuración</button>
+  </nav>
+  <div class="status">
+    <div id="online" class="online" title="Profesores conectados"></div>
+    <div id="conn" class="conn conectando">Conectando…</div>
+    <button id="yo-chip" class="chip" title="Cambiar de profesor">Elegir profesor</button>
+  </div>
+</header>
+
+<main id="app"><div class="vacio">Cargando…</div></main>
+<dialog id="dlg"></dialog>
+<div id="toasts" aria-live="polite"></div>
+
+<script>
+(() => {
+'use strict';
+
+/* =====================================================================
+   SERVIDOR: la propia página (Cloudflare Worker). /api = datos, /ws = tiempo real
+   ===================================================================== */
+const API_BASE = '';
+async function api(metodo, ruta, body) {
+  try {
+    const res = await fetch(`${API_BASE}/api/${ruta}`, { method: metodo, headers: body ? { 'Content-Type': 'application/json' } : {}, body: body ? JSON.stringify(body) : undefined });
+    let data = null; try { data = await res.json(); } catch {}
+    if (!res.ok) return { data: null, error: { code: data?.error?.code || 'HTTP_' + res.status, message: data?.error?.message || `Error ${res.status}`, ...(data?.error || {}) } };
+    return { data, error: null };
+  } catch (e) {
+    return { data: null, error: { code: 'SIN_CONEXION', message: 'No hay conexión con el servidor' } };
+  }
+}
+
+/* ---------------------------------------------------------------------
+   Utilidades
+   --------------------------------------------------------------------- */
+const $  = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad = n => String(n).padStart(2, '0');
+const DIAS = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+const DIAS_CORTOS = ['dom','lun','mar','mié','jue','vie','sáb'];
+const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+const toISO = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const fromISO = s => { const [y,m,d] = s.split('-').map(Number); return new Date(y, m-1, d); };
+const hoyISO = () => toISO(new Date());
+const addDays = (iso, n) => { const d = fromISO(iso); d.setDate(d.getDate()+n); return toISO(d); };
+const lunesDe = iso => { const d = fromISO(iso); d.setDate(d.getDate() - ((d.getDay()+6)%7)); return toISO(d); };
+const fmtLargo = iso => { const d = fromISO(iso); return `${DIAS[d.getDay()]} ${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()}`; };
+const fmtCorto = iso => { const d = fromISO(iso); return `${DIAS_CORTOS[d.getDay()]} ${pad(d.getDate())}/${pad(d.getMonth()+1)}`; };
+const fmtRango = (a, b) => { const A = fromISO(a), B = fromISO(b);
+  if (A.getMonth() === B.getMonth()) return `${A.getDate()} al ${B.getDate()} de ${MESES[A.getMonth()]} ${A.getFullYear()}`;
+  return `${A.getDate()} de ${MESES[A.getMonth()].slice(0,3)} al ${B.getDate()} de ${MESES[B.getMonth()].slice(0,3)} ${B.getFullYear()}`; };
+const fmtHora = hora => { const [H, M] = hora.split(':').map(Number); return `${H%12||12}:${pad(M)} ${H>=12?'PM':'AM'}`; };
+const etiquetaDesdeHora = hora => { const [H, M] = hora.split(':').map(Number); return `${H%12||12}${M?':'+pad(M):''}${H>=12?'PM':'AM'}`; };
+const iniciales = n => n.trim().split(/\s+/).map(p => p[0]).join('').slice(0,2).toUpperCase();
+const horaDe = ts => new Date(ts).toLocaleTimeString('es-PE', {hour:'2-digit', minute:'2-digit'});
+
+/* Parcheo del DOM (en vez de reemplazar innerHTML): conserva los nodos existentes,
+   por lo que no se pierden clics, foco, ni animaciones cuando llegan cambios remotos.
+   Los elementos con data-key se emparejan por clave aunque cambien de posición. */
+function morph(a, b) {
+  const bc = [...b.childNodes];
+  const keyed = new Map();
+  for (const x of a.childNodes) if (x.nodeType === 1 && x.dataset.key) keyed.set(x.dataset.key, x);
+  for (let i = 0; i < bc.length; i++) {
+    const bn = bc[i]; let an = a.childNodes[i];
+    const bk = bn.nodeType === 1 ? (bn.dataset.key || '') : '';
+    if (bk && (!an || an.nodeType !== 1 || (an.dataset.key || '') !== bk)) {
+      const m = keyed.get(bk); if (m && m !== an) { a.insertBefore(m, an || null); an = m; }
+    }
+    if (!an) { a.appendChild(bn); continue; }
+    if (an.nodeType !== bn.nodeType || (bn.nodeType === 1 && (an.tagName !== bn.tagName || (an.dataset.key || '') !== bk))) { a.replaceChild(bn, an); continue; }
+    if (bn.nodeType !== 1) { if (an.nodeValue !== bn.nodeValue) an.nodeValue = bn.nodeValue; continue; }
+    for (const { name } of [...an.attributes]) if (!bn.hasAttribute(name)) an.removeAttribute(name);
+    for (const { name, value } of [...bn.attributes]) if (an.getAttribute(name) !== value) an.setAttribute(name, value);
+    morph(an, bn);
+    const t = an.tagName;
+    if ((t === 'INPUT' || t === 'SELECT' || t === 'TEXTAREA') && document.activeElement !== an) {   // no pisar lo que se está escribiendo
+      if (an.type === 'checkbox' || an.type === 'radio') { if (an.checked !== bn.checked) an.checked = bn.checked; }
+      else if (an.value !== bn.value) an.value = bn.value;
+    }
+  }
+  while (a.childNodes.length > bc.length) a.removeChild(a.lastChild);
+}
+function morphHTML(el, html) { const t = document.createElement('template'); t.innerHTML = html; morph(el, t.content); }
+
+/* ---------------------------------------------------------------------
+   Estado
+   --------------------------------------------------------------------- */
+const state = {
+  tab: 'dia',
+  fecha: hoyISO(),
+  profesores: [], horarios: [], usuarios: [],
+  reservas: [],              // reservas de la semana cargada
+  semana: null,              // lunes (ISO) de la semana cargada
+  proximas: {},              // usuario (minúsculas) -> {fecha, etiqueta, total}
+  yo: null,                  // profesor actual {id, nombre, color}
+  clientId: Math.random().toString(36).slice(2, 10),
+  presencia: {},
+  conexion: 'conectando',
+  diasSemana: Number(localStorage.getItem('rv_dias')) || 6,
+  busquedaUsuarios: '',
+};
+let ws = null, timerReconexion = null, timerPing = null, reintentos = 0, conectadoAntes = false;
+const editando = { actual: null };     // lo que YO estoy reservando ahora mismo (se comparte por presencia)
+const misOps = new Set();              // ids que modifiqué yo (para no notificarme a mí mismo)
+const marcarOp = id => { misOps.add(id); setTimeout(() => misOps.delete(id), 8000); };
+
+const horarioDe  = id => state.horarios.find(h => h.id === id);
+const profesorDe = id => state.profesores.find(p => p.id === id);
+const colorDeProfesor = id => profesorDe(id)?.color || '#94a3b8';
+const reservasDe = (fecha, hid) => state.reservas.filter(r => r.fecha === fecha && r.horario_id === hid).sort((a,b) => a.created_at < b.created_at ? -1 : 1);
+const buscarUsuario = nombre => { const k = nombre.trim().toLowerCase(); return state.usuarios.find(u => u.nombre.trim().toLowerCase() === k); };
+const distintos = campo => [...new Set([...state.reservas.map(r => r[campo]), ...state.usuarios.map(u => u[campo])].filter(Boolean).map(v => v.trim()))].sort();
+const enSemanaCargada = fecha => state.semana && fecha >= state.semana && fecha <= addDays(state.semana, 6);
+
+/* ---------------------------------------------------------------------
+   Carga de datos
+   --------------------------------------------------------------------- */
+async function cargarBase() {
+  const { data, error } = await api('GET', 'estado');
+  if (error) throw error;
+  state.profesores = data.profesores; state.horarios = data.horarios; state.usuarios = data.usuarios;
+  if (state.yo) {
+    const actual = state.profesores.find(x => x.id === state.yo.id && x.activo);
+    if (actual) { state.yo = { id: actual.id, nombre: actual.nombre, color: actual.color }; localStorage.setItem('rv_yo', JSON.stringify(state.yo)); }
+    else { state.yo = null; localStorage.removeItem('rv_yo'); }
+  }
+}
+async function cargarReservas() {
+  const lunes = lunesDe(state.fecha), domingo = addDays(lunes, 6);
+  const { data, error } = await api('GET', `reservas?desde=${lunes}&hasta=${domingo}`);
+  if (error) { toast('Error al cargar reservas: ' + esc(error.message), 'error'); return; }
+  state.reservas = data; state.semana = lunes;
+}
+async function cargarProximas() {
+  const { data, error } = await api('GET', `reservas?desde=${hoyISO()}`);
+  if (error) return;
+  const m = {};
+  for (const r of data) {
+    const k = r.usuario_nombre.trim().toLowerCase();
+    if (!m[k]) m[k] = { fecha: r.fecha, etiqueta: horarioDe(r.horario_id)?.etiqueta || '', total: 0 };
+    m[k].total++;
+  }
+  state.proximas = m;
+}
+let timerBase;
+function recargarBase() {
+  clearTimeout(timerBase);
+  timerBase = setTimeout(async () => { try { await cargarBase(); render(); actualizarDialogo(); if (!state.yo && !$('#dlg').open) abrirSelectorProfesor(); } catch (e) { console.error(e); } }, 250);
+}
+async function refrescarTodo() {
+  try { await cargarBase(); await cargarReservas(); if (state.tab === 'usuarios') await cargarProximas(); render(); actualizarDialogo(); } catch (e) { console.error(e); }
+}
+
+/* ---------------------------------------------------------------------
+   Tiempo real: WebSocket con el servidor (/ws)
+   - El servidor avisa de cada cambio en los datos y reparte la "presencia":
+     quién está conectado y qué está reservando ahora mismo.
+   - Reconexión automática con espera creciente.
+   --------------------------------------------------------------------- */
+const PRESENCIA_LATIDO = 20000, PRESENCIA_TIMEOUT = 65000;
+function conectarRealtime() {
+  clearTimeout(timerReconexion);
+  if (ws && (ws.readyState === 0 || ws.readyState === 1)) return;
+  setConexion('conectando');
+  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const socket = new WebSocket(`${proto}//${location.host}${API_BASE}/ws`);
+  ws = socket;
+  socket.onopen = async () => {
+    reintentos = 0; setConexion('online');
+    await publicarPresencia({ nuevo: true });
+    if (conectadoAntes) refrescarTodo();        // tras una reconexión, nos ponemos al día
+    conectadoAntes = true;
+    clearInterval(timerPing); timerPing = setInterval(() => { if (socket.readyState === 1) socket.send('ping'); }, 30000);
+  };
+  socket.onmessage = ev => {
+    if (ev.data === 'pong') return;
+    let m; try { m = JSON.parse(ev.data); } catch { return; }
+    manejarMensaje(m);
+  };
+  socket.onclose = () => {
+    if (ws !== socket) return;
+    clearInterval(timerPing); setConexion('offline');
+    const espera = Math.min(30000, 1000 * Math.pow(2, reintentos++));
+    timerReconexion = setTimeout(conectarRealtime, espera);
+  };
+  socket.onerror = () => { try { socket.close(); } catch {} };
+}
+function manejarMensaje(m) {
+  switch (m.t) {
+    case 'bienvenida': for (const p of m.presencias || []) recibirPresencia(p); break;
+    case 'presencia':  recibirPresencia(m); break;
+    case 'adios':      quitarPresencia(m.clientId); break;
+    case 'cambio':
+      if (m.tabla === 'reservas' && m.evento !== 'BULK') onCambioReserva({ eventType: m.evento, new: m.new, old: m.old });
+      else if (m.tabla === 'reservas') cargarReservas().then(() => { render(); actualizarDialogo(); });
+      else recargarBase();
+      break;
+  }
+}
+setInterval(() => {
+  publicarPresencia();                                  // latido
+  const ahora = Date.now(); let cambio = false;
+  for (const [k, v] of Object.entries(state.presencia)) if (ahora - v.visto > PRESENCIA_TIMEOUT) { delete state.presencia[k]; cambio = true; }
+  if (cambio) { renderPresencia(); render(); actualizarDialogo(); }
+}, PRESENCIA_LATIDO);
+let timerPresencia;
+async function publicarPresencia(extra = {}) {
+  if (!ws || ws.readyState !== 1 || !state.yo) return;
+  try {
+    ws.send(JSON.stringify({ t: 'presencia', clientId: state.clientId, profesor_id: state.yo.id, profesor_nombre: state.yo.nombre, color: state.yo.color,
+      editando: editando.actual, ...extra }));
+  } catch (e) { console.warn('presencia', e); }
+}
+function publicarPresenciaDebounced() { clearTimeout(timerPresencia); timerPresencia = setTimeout(() => publicarPresencia(), 200); }
+function quitarPresencia(clientId) {
+  if (!clientId || clientId === state.clientId || !state.presencia[clientId]) return;
+  delete state.presencia[clientId]; renderPresencia(); render(); actualizarDialogo();
+}
+function recibirPresencia(p) {
+  if (!p || !p.clientId || p.clientId === state.clientId) return;
+  const prev = state.presencia[p.clientId];
+  const firmaPrev = prev ? JSON.stringify([prev.profesor_id, prev.profesor_nombre, prev.color, prev.editando]) : '';
+  state.presencia[p.clientId] = { ...p, visto: Date.now() };
+  const firma = JSON.stringify([p.profesor_id, p.profesor_nombre, p.color, p.editando]);
+  renderPresencia();
+  if (firma !== firmaPrev) { renderSuave(); actualizarDialogo(); }
+}
+function otrosEditando(fecha, hid) {
+  return Object.values(state.presencia).filter(m => m.editando && m.editando.fecha === fecha && m.editando.horario_id === hid);
+}
+function conectados() {
+  const map = new Map();
+  if (state.yo && state.conexion === 'online') map.set(state.yo.id, { profesor_id: state.yo.id, profesor_nombre: state.yo.nombre, color: state.yo.color, yo: true });
+  for (const m of Object.values(state.presencia)) if (m.profesor_id && !map.has(m.profesor_id)) map.set(m.profesor_id, { ...m, yo: false });
+  return [...map.values()];
+}
+
+let timerRecarga;
+function onCambioReserva(p) {
+  const r = p.new && p.new.id ? p.new : null;
+  const oldId = p.old?.id;
+  const et = id => esc(horarioDe(id)?.etiqueta || '');
+
+  if (p.eventType === 'INSERT' && r) {
+    if (!misOps.has(r.id)) {
+      toast(`<b>${esc(r.profesor_nombre || 'Otro profesor')}</b> reservó a <b>${esc(r.usuario_nombre)}</b> — ${et(r.horario_id)} · ${fmtCorto(r.fecha)}`, 'info', colorDeProfesor(r.profesor_id));
+    }
+    if (enSemanaCargada(r.fecha) && !state.reservas.some(x => x.id === r.id)) state.reservas.push(r);
+    const h = horarioDe(r.horario_id);
+    if (!misOps.has(r.id) && h && reservasDe(r.fecha, r.horario_id).length >= h.cupos)
+      toast(`🔒 <b>${esc(h.etiqueta)}</b> (${fmtCorto(r.fecha)}) quedó <b>completo</b> (${h.cupos}/${h.cupos})`, 'warning');
+  } else if (p.eventType === 'UPDATE' && r) {
+    if (!misOps.has(r.id)) toast(`Se actualizó la reserva de <b>${esc(r.usuario_nombre)}</b> — ${et(r.horario_id)} · ${fmtCorto(r.fecha)}`, 'info');
+    const i = state.reservas.findIndex(x => x.id === r.id);
+    if (i >= 0) state.reservas[i] = r; else if (enSemanaCargada(r.fecha)) state.reservas.push(r);
+    if (!enSemanaCargada(r.fecha)) state.reservas = state.reservas.filter(x => x.id !== r.id);
+  } else if (p.eventType === 'DELETE' && oldId) {
+    const prev = state.reservas.find(x => x.id === oldId) || (p.old && p.old.usuario_nombre ? p.old : null);
+    if (prev && !misOps.has(oldId)) toast(`Se liberó un cupo: <b>${esc(prev.usuario_nombre)}</b> — ${et(prev.horario_id)} · ${fmtCorto(prev.fecha)}`, 'warning');
+    state.reservas = state.reservas.filter(x => x.id !== oldId);
+  }
+  render(); actualizarDialogo();
+  // Recarga de seguridad para quedar 100% consistentes con la base de datos
+  clearTimeout(timerRecarga);
+  timerRecarga = setTimeout(async () => { await cargarReservas(); if (state.tab === 'usuarios') await cargarProximas(); render(); actualizarDialogo(); }, 500);
+}
+
+function setConexion(s) {
+  state.conexion = s;
+  const el = $('#conn');
+  el.className = 'conn ' + s;
+  el.textContent = s === 'online' ? 'Sincronizado' : s === 'offline' ? 'Sin conexión' : 'Conectando…';
+  el.title = s === 'online' ? 'Los cambios se guardan y comparten al instante' : s === 'offline' ? 'Reintentando conexión…' : '';
+  if (s !== 'online') state.presencia = {};   // sin conexión no sabemos quién sigue ahí
+  renderPresencia(); if (state.horarios.length) render();
+}
+
+/* ---------------------------------------------------------------------
+   Render
+   --------------------------------------------------------------------- */
+function render() {
+  $$('#tabs button').forEach(b => b.classList.toggle('active', b.dataset.tab === state.tab));
+  const html = state.tab === 'dia' ? vistaDia() : state.tab === 'semana' ? vistaSemana() : state.tab === 'usuarios' ? vistaUsuarios() : vistaConfig();
+  morphHTML($('#app'), html);
+  renderChipYo();
+}
+const renderSuave = render;
+function renderChipYo() {
+  $('#yo-chip').innerHTML = state.yo ? `<i class="dot" style="background:${esc(state.yo.color)}"></i>${esc(state.yo.nombre)} <small>▾</small>` : '👤 Elegir profesor';
+}
+function renderPresencia() {
+  const lista = conectados().sort((a, b) => (b.yo ? 1 : 0) - (a.yo ? 1 : 0));
+  $('#online').innerHTML = lista.map(p => `<span class="avatar ${p.yo ? 'yo' : ''}" style="--c:${esc(p.color)}" title="${esc(p.profesor_nombre)}${p.yo ? ' (tú)' : ''} · en línea">${esc(iniciales(p.profesor_nombre))}</span>`).join('')
+    + (lista.length ? `<small>${lista.length} en línea</small>` : '');
+}
+
+/* ---------- Vista: Reservas del día ---------- */
+function vistaDia() {
+  const f = state.fecha, hoy = hoyISO();
+  const hs = state.horarios.filter(h => h.activo);
+  const totalCupos = hs.reduce((s, h) => s + h.cupos, 0);
+  const totalOcup = hs.reduce((s, h) => s + reservasDe(f, h.id).length, 0);
+  const lunes = lunesDe(f);
+  const strip = Array.from({ length: 7 }, (_, i) => addDays(lunes, i)).map(d => {
+    const n = hs.reduce((s, h) => s + reservasDe(d, h.id).length, 0);
+    const lleno = totalCupos > 0 && n >= totalCupos;
+    return `<button data-key="${d}" data-action="ir-dia" data-fecha="${d}" class="${d === f ? 'sel' : ''} ${d === hoy ? 'hoy' : ''}"><small>${DIAS_CORTOS[fromISO(d).getDay()]}</small><b>${fromISO(d).getDate()}</b><span class="ocup ${lleno ? 'lleno' : ''}">${n}/${totalCupos}</span></button>`;
+  }).join('');
+  return `
+  <section class="panel">
+    <div class="barra-fecha no-print">
+      <button class="btn-icon" data-action="dia-prev" title="Día anterior (←)">◀</button>
+      <input type="date" id="fecha-input" value="${f}">
+      <button class="btn-icon" data-action="dia-next" title="Día siguiente (→)">▶</button>
+      <button class="btn-soft" data-action="dia-hoy" ${f === hoy ? 'disabled' : ''}>Hoy</button>
+      <h2 class="titulo-fecha">${fmtLargo(f)}</h2>
+      <div class="spacer"></div>
+      <span class="resumen-dia">${totalOcup}/${totalCupos} cupos ocupados</span>
+      <button class="btn-soft" data-action="imprimir">🖨️ Imprimir</button>
+    </div>
+    <div class="strip no-print">${strip}</div>
+    <h2 class="solo-print">Lista de Reservas — ${fmtLargo(f)}</h2>
+    ${hs.length ? hs.map(h => tarjetaHorario(h, f)).join('') : '<div class="vacio">No hay horarios activos. Ve a <b>Configuración</b> para agregarlos.</div>'}
+  </section>`;
+}
+function tarjetaHorario(h, fecha) {
+  const rs = reservasDe(fecha, h.id);
+  const n = rs.length, cap = h.cupos, libres = Math.max(cap - n, 0), lleno = n >= cap;
+  const otros = otrosEditando(fecha, h.id);
+  const filas = Math.max(cap, n);
+  let rows = '', primeraLibre = true;
+  for (let i = 0; i < filas; i++) {
+    const r = rs[i];
+    if (r) rows += filaReserva(i + 1, r, otros.filter(o => o.editando.reserva_id === r.id));
+    else { rows += filaLibre(i + 1, fecha, h, primeraLibre, primeraLibre ? otros.filter(o => !o.editando.reserva_id) : []); primeraLibre = false; }
+  }
+  const pct = Math.min(100, Math.round(n / cap * 100));
+  const nivel = lleno ? 'lleno' : libres === 1 ? 'casi' : 'ok';
+  return `
+  <article class="horario ${nivel}" data-key="${h.id}">
+    <header class="horario-head">
+      <div class="h-titulo"><span class="h-etiqueta">${esc(h.etiqueta)}</span><span class="h-hora">${fmtHora(h.hora)}</span></div>
+      <div class="h-estado">
+        ${lleno ? '<span class="badge badge-lleno">🔒 COMPLETO</span>' : libres === 1 ? '<span class="badge badge-casi">¡Último cupo!</span>' : ''}
+        <span class="h-cupos">${n}/${cap} cupos</span>
+        <div class="barra"><div class="barra-fill" style="width:${pct}%"></div></div>
+      </div>
+    </header>
+    <div class="tabla">
+      <div class="fila fila-cab"><span>N°</span><span>Usuario</span><span>Programa</span><span>Guía</span><span>Reservado por</span><span></span></div>
+      ${rows}
+    </div>
+  </article>`;
+}
+function filaReserva(num, r, editores) {
+  const p = profesorDe(r.profesor_id), color = p?.color || '#94a3b8', nombreP = p?.nombre || r.profesor_nombre || '—';
+  const ed = editores.length ? `<span class="editando pulso" style="--c:${esc(editores[0].color)}">✏️ ${esc(editores[0].profesor_nombre)} está editando…</span>` : '';
+  return `<div class="fila ocupada" data-key="r-${r.id}">
+    <span class="num">${num}</span>
+    <span class="usuario"><b>${esc(r.usuario_nombre)}</b>${ed}
+      <span class="meta">${esc(r.programa || '—')} · ${esc(r.guia || '—')} · <i class="dot" style="background:${esc(color)}"></i>${esc(nombreP)}</span></span>
+    <span class="programa">${esc(r.programa || '—')}</span>
+    <span class="guia">${esc(r.guia || '—')}</span>
+    <span class="por"><i class="dot" style="background:${esc(color)}"></i>${esc(nombreP)} <small>${horaDe(r.created_at)}</small></span>
+    <span class="acciones no-print">
+      <button class="btn-mini" data-action="editar" data-id="${r.id}" title="Editar">✏️</button>
+      <button class="btn-mini danger" data-action="eliminar" data-id="${r.id}" title="Eliminar / liberar cupo">🗑️</button>
+    </span>
+  </div>`;
+}
+function filaLibre(num, fecha, h, primera, editores) {
+  const ed = editores.map(o => `<span class="editando pulso" style="--c:${esc(o.color)}"><i class="dot" style="background:${esc(o.color)}"></i>${esc(o.profesor_nombre)} está reservando${o.editando.nombre ? ` a «<b>${esc(o.editando.nombre)}</b>»` : '…'}</span>`).join('');
+  return `<div class="fila libre ${editores.length ? 'con-editor' : ''}" data-key="libre-${num}">
+    <span class="num">${num}</span>
+    <span class="usuario"><em>Libre</em>${ed}</span>
+    <span class="acciones no-print">${primera ? `<button class="btn-primary btn-sm" data-action="reservar" data-fecha="${fecha}" data-horario="${h.id}">+ Reservar</button>` : ''}</span>
+  </div>`;
+}
+
+/* ---------- Vista: Semana ---------- */
+function vistaSemana() {
+  const lunes = lunesDe(state.fecha), hoy = hoyISO();
+  const dias = Array.from({ length: state.diasSemana }, (_, i) => addDays(lunes, i));
+  const hs = state.horarios.filter(h => h.activo);
+  const totalCupos = hs.reduce((s, h) => s + h.cupos, 0);
+  return `
+  <section class="panel">
+    <div class="barra-fecha no-print">
+      <button class="btn-icon" data-action="semana-prev" title="Semana anterior">◀</button>
+      <button class="btn-icon" data-action="semana-next" title="Semana siguiente">▶</button>
+      <button class="btn-soft" data-action="semana-hoy">Esta semana</button>
+      <h2 class="titulo-fecha">Semana del ${fmtRango(lunes, dias[dias.length - 1])}</h2>
+      <div class="spacer"></div>
+      <select id="dias-semana" title="Días a mostrar">${[5,6,7].map(n => `<option value="${n}" ${n === state.diasSemana ? 'selected' : ''}>${n === 5 ? 'Lun – Vie' : n === 6 ? 'Lun – Sáb' : 'Lun – Dom'}</option>`).join('')}</select>
+      <button class="btn-soft" data-action="imprimir">🖨️ Imprimir</button>
+    </div>
+    <h2 class="solo-print">Reservas — Semana del ${fmtRango(lunes, dias[dias.length - 1])}</h2>
+    <div class="semana-wrap"><div class="semana" style="--cols:${dias.length}">
+      ${dias.map(d => { const tot = hs.reduce((s, h) => s + reservasDe(d, h.id).length, 0); return `
+        <div class="dia ${d === hoy ? 'hoy' : ''} ${d === state.fecha ? 'sel' : ''}" data-key="${d}" data-action="ir-dia" data-fecha="${d}" title="Ver ${fmtLargo(d)}">
+          <div class="dia-head"><span>${DIAS[fromISO(d).getDay()]}</span><b>${fromISO(d).getDate()}</b></div>
+          ${hs.map(h => { const rs = reservasDe(d, h.id), n = rs.length, lleno = n >= h.cupos, otros = otrosEditando(d, h.id);
+            return `<div class="mini ${lleno ? 'lleno' : n === h.cupos - 1 ? 'casi' : n ? 'parcial' : ''}">
+              <div class="mini-head"><span>${esc(h.etiqueta)}</span><span>${n}/${h.cupos}${lleno ? ' 🔒' : ''}</span></div>
+              ${rs.map(r => `<div class="mini-nombre" style="--c:${esc(colorDeProfesor(r.profesor_id))}" title="${esc(r.usuario_nombre)} · ${esc(r.programa || '')}">${esc(r.usuario_nombre)}</div>`).join('')}
+              ${otros.map(o => `<div class="mini-nombre editando pulso" style="--c:${esc(o.color)}">✍️ ${esc(o.profesor_nombre)}${o.editando.nombre ? ': ' + esc(o.editando.nombre) : ''}</div>`).join('')}
+            </div>`; }).join('')}
+          <div class="dia-total">${tot}/${totalCupos} ocupados</div>
+        </div>`; }).join('')}
+    </div></div>
+  </section>`;
+}
+
+/* ---------- Vista: Usuarios ---------- */
+function vistaUsuarios() {
+  return `
+  <section class="panel">
+    <div class="barra-fecha">
+      <h2 class="titulo-fecha">Usuarios <small>(${state.usuarios.length})</small></h2>
+      <input type="search" id="buscar-usuarios" placeholder="Buscar por nombre, programa o notas…" value="${esc(state.busquedaUsuarios)}">
+      <div class="spacer"></div>
+      <button class="btn-primary" data-action="nuevo-usuario">+ Nuevo usuario</button>
+    </div>
+    <p class="muted small" style="margin:0 0 10px">Los usuarios se agregan automáticamente al directorio cuando los reservas por primera vez. Al reservar, el campo <b>Usuario</b> autocompleta desde esta lista.</p>
+    <div id="tabla-usuarios">${tablaUsuarios()}</div>
+  </section>`;
+}
+function tablaUsuarios() {
+  const q = state.busquedaUsuarios.trim().toLowerCase();
+  const lista = state.usuarios.filter(u => !q || `${u.nombre} ${u.programa || ''} ${u.notas || ''}`.toLowerCase().includes(q));
+  return `<div class="tabla usuarios">
+    <div class="fila fila-cab"><span>Nombre</span><span>Programa</span><span>Notas</span><span>Próxima reserva</span><span></span></div>
+    ${lista.length ? lista.map(u => { const px = state.proximas[u.nombre.trim().toLowerCase()]; return `<div class="fila ocupada" data-key="${u.id}">
+      <span><b>${esc(u.nombre)}</b><span class="meta">${esc(u.programa || '—')}${px ? ` · próx. ${fmtCorto(px.fecha)} ${esc(px.etiqueta)}` : ''}</span></span>
+      <span>${esc(u.programa || '—')}</span>
+      <span class="muted">${esc(u.notas || '')}</span>
+      <span>${px ? `${fmtCorto(px.fecha)} · ${esc(px.etiqueta)} <small class="muted">(${px.total} próx.)</small>` : '<span class="muted">—</span>'}</span>
+      <span class="acciones"><button class="btn-mini" data-action="editar-usuario" data-id="${u.id}" title="Editar">✏️</button><button class="btn-mini danger" data-action="eliminar-usuario" data-id="${u.id}" title="Eliminar">🗑️</button></span>
+    </div>`; }).join('') : `<div class="vacio">${q ? 'Sin resultados para la búsqueda.' : 'Aún no hay usuarios. Se crean solos al reservar, o con “+ Nuevo usuario”.'}</div>`}
+  </div>`;
+}
+
+/* ---------- Vista: Configuración ---------- */
+function vistaConfig() {
+  const hoy = fromISO(hoyISO());
+  const desde = toISO(new Date(hoy.getFullYear(), hoy.getMonth(), 1));
+  const hasta = toISO(new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0));
+  return `
+  <section class="panel config">
+    <h2 class="titulo-fecha">⚙️ Configuración</h2>
+    <p class="muted small" style="margin:4px 0 0 6px">Todo se guarda automáticamente y se aplica al instante en la pantalla del otro profesor.</p>
+
+    <h3>🕒 Horarios y cupos <span class="muted">— cuando un horario llega a su máximo se bloquea solo</span></h3>
+    <div class="tabla config-horarios">
+      <div class="fila fila-cab"><span>Orden</span><span>Etiqueta</span><span>Hora</span><span>Cupos</span><span>Activo</span><span></span></div>
+      ${state.horarios.map((h, i) => `<div class="fila" data-key="${h.id}">
+        <span class="orden"><button class="btn-mini" data-action="horario-subir" data-id="${h.id}" ${i === 0 ? 'disabled' : ''} title="Subir">↑</button><button class="btn-mini" data-action="horario-bajar" data-id="${h.id}" ${i === state.horarios.length - 1 ? 'disabled' : ''} title="Bajar">↓</button></span>
+        <span><input type="text" data-tabla="horarios" data-id="${h.id}" data-campo="etiqueta" value="${esc(h.etiqueta)}" maxlength="24" placeholder="Ej. 1PM"></span>
+        <span><input type="time" data-tabla="horarios" data-id="${h.id}" data-campo="hora" value="${h.hora.slice(0, 5)}"></span>
+        <span><input type="number" min="1" max="50" data-tabla="horarios" data-id="${h.id}" data-campo="cupos" value="${h.cupos}"></span>
+        <span><label class="switch" title="${h.activo ? 'Activo' : 'Inactivo (oculto)'}"><input type="checkbox" data-tabla="horarios" data-id="${h.id}" data-campo="activo" ${h.activo ? 'checked' : ''}><i></i></label></span>
+        <span class="acciones"><button class="btn-mini danger" data-action="horario-borrar" data-id="${h.id}" title="Eliminar horario">🗑️</button></span>
+      </div>`).join('')}
+      ${state.horarios.length ? '' : '<div class="vacio">No hay horarios.</div>'}
+    </div>
+    <p style="margin:10px 0 0"><button class="btn-soft" data-action="horario-nuevo">+ Agregar horario</button></p>
+
+    <h3>👩‍🏫 Profesores <span class="muted">— cada uno elige su nombre al entrar</span></h3>
+    <div class="tabla config-prof">
+      <div class="fila fila-cab"><span>Color</span><span>Nombre</span><span>Activo</span><span></span></div>
+      ${state.profesores.map(p => `<div class="fila" data-key="${p.id}">
+        <span><input type="color" data-tabla="profesores" data-id="${p.id}" data-campo="color" value="${esc(p.color)}" title="Color"></span>
+        <span><input type="text" data-tabla="profesores" data-id="${p.id}" data-campo="nombre" value="${esc(p.nombre)}" maxlength="40"></span>
+        <span><label class="switch"><input type="checkbox" data-tabla="profesores" data-id="${p.id}" data-campo="activo" ${p.activo ? 'checked' : ''}><i></i></label></span>
+        <span class="acciones"><button class="btn-mini danger" data-action="profesor-borrar" data-id="${p.id}" title="Eliminar profesor">🗑️</button></span>
+      </div>`).join('')}
+    </div>
+    <p style="margin:10px 0 0"><button class="btn-soft" data-action="profesor-nuevo">+ Agregar profesor</button></p>
+
+    <h3>📦 Datos</h3>
+    <div class="datos">
+      <label>Desde <input type="date" id="exp-desde" value="${desde}"></label>
+      <label>Hasta <input type="date" id="exp-hasta" value="${hasta}"></label>
+      <button class="btn-soft" data-action="exportar-csv">⬇️ Exportar CSV (Excel)</button>
+      <button class="btn-soft" data-action="exportar-json">⬇️ Copia de seguridad (JSON)</button>
+    </div>
+    <div class="datos peligro">
+      <button class="btn-danger-soft" data-action="limpiar-antiguas">🧹 Eliminar reservas anteriores a la fecha “Desde”</button>
+      <span class="muted small">Útil para limpiar meses pasados. Te pedirá confirmación.</span>
+    </div>
+
+    <h3>☁️ Conexión</h3>
+    <div class="info-box">
+      Servidor: <b>${esc(location.host)}</b> (Cloudflare Workers + Durable Objects)<br>
+      Estado: <b>${state.conexion === 'online' ? '🟢 Sincronizado en tiempo real' : state.conexion === 'offline' ? '🔴 Sin conexión (reintentando)' : '🟡 Conectando…'}</b> · Tu identificador de sesión: <code>${state.clientId}</code><br>
+      <span class="muted">Los datos se guardan en el servidor; descarga una copia de seguridad de vez en cuando desde la sección Datos.</span>
+    </div>
+  </section>`;
+}
+
+/* ---------------------------------------------------------------------
+   Diálogos
+   --------------------------------------------------------------------- */
+function abrirSelectorProfesor() {
+  const dlg = $('#dlg');
+  const activos = state.profesores.filter(p => p.activo);
+  dlg.dataset.tipo = 'profesor';
+  dlg.innerHTML = `<div class="dlg-form">
+    <header class="dlg-head"><h3>¿Quién eres?</h3>${state.yo ? '<button type="button" class="btn-icon" data-close title="Cerrar">✕</button>' : ''}</header>
+    <p class="muted" style="margin:0">Elige tu nombre. Así el otro profesor verá en tiempo real qué estás reservando.</p>
+    <div class="lista-prof">${activos.map(p => `<button type="button" class="prof-btn" data-prof="${p.id}" style="--c:${esc(p.color)}"><i class="dot" style="background:${esc(p.color)}"></i>${esc(p.nombre)}${state.yo?.id === p.id ? ' <small class="muted">(actual)</small>' : ''}</button>`).join('') || '<div class="vacio">No hay profesores activos.</div>'}</div>
+    <p class="muted small" style="margin:0">Puedes cambiar nombres y colores en <b>Configuración</b>.</p>
+  </div>`;
+  if (!dlg.open) dlg.showModal();
+}
+function elegirProfesor(id) {
+  const p = profesorDe(id); if (!p) return;
+  state.yo = { id: p.id, nombre: p.nombre, color: p.color };
+  localStorage.setItem('rv_yo', JSON.stringify(state.yo));
+  $('#dlg').close();
+  renderChipYo(); publicarPresencia(); renderPresencia(); render();
+  toast(`Hola, <b>${esc(p.nombre)}</b> 👋`, 'success', p.color, 2500);
+}
+
+function abrirReserva({ fecha, horario_id, reserva }) {
+  const h = horarioDe(horario_id); if (!h) return;
+  const dlg = $('#dlg'), esEdicion = !!reserva;
+  dlg.dataset.tipo = 'reserva'; dlg.dataset.fecha = fecha; dlg.dataset.horario = horario_id; dlg.dataset.reserva = reserva?.id || '';
+  dlg.innerHTML = `
+  <form class="dlg-form" id="form-reserva" novalidate>
+    <header class="dlg-head"><h3>${esEdicion ? '✏️ Editar reserva' : '➕ Nueva reserva'}</h3><button type="button" class="btn-icon" data-close title="Cerrar">✕</button></header>
+    <div class="dlg-sub">${esc(h.etiqueta)} · ${fmtLargo(fecha)}</div>
+    <div id="dlg-cupos" class="dlg-cupos ok"></div>
+    <label>Usuario <span class="req">*</span>
+      <input name="usuario" list="dl-usuarios" required autocomplete="off" placeholder="Nombre del usuario / alumno" value="${esc(reserva?.usuario_nombre || '')}">
+    </label>
+    <datalist id="dl-usuarios">${state.usuarios.filter(u => u.activo !== false).map(u => `<option value="${esc(u.nombre)}">${esc(u.programa || '')}</option>`).join('')}</datalist>
+    <div class="grid2">
+      <label>Programa <input name="programa" list="dl-programas" autocomplete="off" placeholder="Ej. Inglés básico" value="${esc(reserva?.programa || '')}"></label>
+      <label>Guía <input name="guia" list="dl-guias" autocomplete="off" placeholder="Ej. Guía 3" value="${esc(reserva?.guia || '')}"></label>
+    </div>
+    <datalist id="dl-programas">${distintos('programa').map(v => `<option value="${esc(v)}">`).join('')}</datalist>
+    <datalist id="dl-guias">${distintos('guia').map(v => `<option value="${esc(v)}">`).join('')}</datalist>
+    ${esEdicion ? `<label>Horario <select name="horario">${state.horarios.filter(x => x.activo || x.id === horario_id).map(x => `<option value="${x.id}" ${x.id === horario_id ? 'selected' : ''}>${esc(x.etiqueta)} · ${fmtHora(x.hora)}</option>`).join('')}</select></label>` : ''}
+    <div class="dlg-error" id="dlg-error" hidden></div>
+    <footer class="dlg-foot">
+      ${esEdicion ? '<button type="button" class="btn-danger-soft" data-action-dlg="eliminar">🗑️ Eliminar</button>' : ''}
+      <div class="spacer"></div>
+      <button type="button" class="btn-soft" data-close>Cancelar</button>
+      <button type="submit" class="btn-primary" id="dlg-guardar">${esEdicion ? 'Guardar cambios' : 'Reservar'}</button>
+    </footer>
+  </form>`;
+  editando.actual = { fecha, horario_id, nombre: reserva?.usuario_nombre || '', reserva_id: reserva?.id || null };
+  publicarPresencia();
+  if (!dlg.open) dlg.showModal();
+  actualizarDialogo();
+  const inp = dlg.querySelector('[name=usuario]');
+  inp.focus(); if (!esEdicion) inp.select();
+  inp.addEventListener('input', () => {
+    editando.actual.nombre = inp.value.trim(); publicarPresenciaDebounced();
+    const u = buscarUsuario(inp.value), prog = dlg.querySelector('[name=programa]');
+    if (u && u.programa && !prog.value) prog.value = u.programa;   // autocompleta el programa del usuario conocido
+  });
+  dlg.querySelector('[name=horario]')?.addEventListener('change', e => { editando.actual.horario_id = e.target.value; publicarPresencia(); actualizarDialogo(); });
+}
+// Actualiza en vivo la info de cupos / avisos dentro del diálogo (al llegar cambios de otros)
+function actualizarDialogo() {
+  const dlg = $('#dlg');
+  if (!dlg.open || dlg.dataset.tipo !== 'reserva') return;
+  const fecha = dlg.dataset.fecha, rid = dlg.dataset.reserva || null;
+  const hid = dlg.querySelector('[name=horario]')?.value || dlg.dataset.horario;
+  const h = horarioDe(hid); const box = $('#dlg-cupos'), btn = $('#dlg-guardar'); if (!h || !box) return;
+  const ocupados = reservasDe(fecha, hid).filter(r => r.id !== rid).length;
+  const libres = h.cupos - ocupados, lleno = libres <= 0;
+  const otros = otrosEditando(fecha, hid);
+  box.className = 'dlg-cupos ' + (lleno ? 'lleno' : libres === 1 ? 'casi' : 'ok');
+  box.innerHTML = (lleno
+      ? `🔒 <b>Horario completo</b> (${ocupados}/${h.cupos}). No se pueden agregar más reservas.`
+      : `${libres === 1 ? '⚠️ Queda <b>1</b> cupo' : `Quedan <b>${libres}</b> de ${h.cupos} cupos`} en ${esc(h.etiqueta)}.`)
+    + (otros.length ? `<div class="aviso-otros">👀 ${otros.map(o => `<i class="dot" style="background:${esc(o.color)}"></i>${esc(o.profesor_nombre)}${o.editando.nombre ? ` («${esc(o.editando.nombre)}»)` : ''}`).join(', ')} también está reservando en este horario ahora mismo.</div>` : '');
+  if (btn && !btn.dataset.guardando) btn.disabled = lleno;
+}
+function mostrarErrorDlg(msg) { const e = $('#dlg-error'); if (e) { e.innerHTML = msg; e.hidden = false; } }
+function traducirError(e) {
+  const m = e?.message || '';
+  if (e?.code === 'HORARIO_LLENO') return `🔒 <b>${esc(e.etiqueta)}</b> ya está completo (${esc(e.ocupados)}/${esc(e.cupos)}). Otro profesor ocupó el último cupo hace un momento.`;
+  if (e?.code === 'DUPLICADO') return 'Ese usuario <b>ya tiene una reserva</b> en este horario.';
+  if (e?.code === 'HORARIO_INEXISTENTE') return 'El horario ya no existe (fue eliminado).';
+  if (e?.code === 'NOMBRE_VACIO') return 'El nombre del usuario no puede estar vacío.';
+  if (e?.code === 'SIN_CONEXION') return 'Sin conexión con el servidor. Revisa tu internet e inténtalo de nuevo.';
+  return 'No se pudo guardar: ' + esc(m);
+}
+
+async function guardarReserva(form) {
+  const dlg = $('#dlg');
+  const fecha = dlg.dataset.fecha, rid = dlg.dataset.reserva || null;
+  const hid = form.horario?.value || dlg.dataset.horario;
+  const usuario = form.usuario.value.trim(), programa = form.programa.value.trim() || null, guia = form.guia.value.trim() || null;
+  if (!usuario) { mostrarErrorDlg('Escribe el nombre del usuario.'); form.usuario.focus(); return; }
+  if (!state.yo) { abrirSelectorProfesor(); return; }
+  const btn = $('#dlg-guardar'); btn.disabled = true; btn.dataset.guardando = '1'; const txt = btn.textContent; btn.textContent = 'Guardando…';
+  $('#dlg-error').hidden = true;
+
+  // 1) usuario en el directorio (se crea si es nuevo)
+  let u = buscarUsuario(usuario);
+  if (!u) {
+    const ins = await api('POST', 'usuarios', { nombre: usuario, programa });
+    if (!ins.error) { u = ins.data; state.usuarios.push(u); state.usuarios.sort((a, b) => a.nombre.localeCompare(b.nombre, 'es')); }
+    else if (ins.error.code === 'DUPLICADO') { try { await cargarBase(); } catch {} u = buscarUsuario(usuario); }
+  }
+  // 2) la reserva (la base de datos valida el cupo de forma atómica)
+  const payload = { fecha, horario_id: hid, usuario_nombre: usuario, programa, guia, usuario_id: u?.id || null };
+  const res = rid
+    ? await api('PATCH', `reservas/${rid}`, payload)
+    : await api('POST', 'reservas', { ...payload, profesor_id: state.yo.id, profesor_nombre: state.yo.nombre });
+
+  btn.disabled = false; delete btn.dataset.guardando; btn.textContent = txt;
+  if (res.error) {
+    mostrarErrorDlg(traducirError(res.error));
+    await cargarReservas(); render(); actualizarDialogo();
+    return;
+  }
+  marcarOp(res.data.id);
+  const i = state.reservas.findIndex(x => x.id === res.data.id);
+  if (i >= 0) state.reservas[i] = res.data; else state.reservas.push(res.data);
+  dlg.close();
+  const h = horarioDe(hid), n = reservasDe(fecha, hid).length;
+  toast(rid ? `Reserva de <b>${esc(usuario)}</b> actualizada` : `✅ <b>${esc(usuario)}</b> reservado en ${esc(h.etiqueta)} · ${fmtCorto(fecha)}`, 'success');
+  if (!rid && h && n >= h.cupos) toast(`🔒 <b>${esc(h.etiqueta)}</b> quedó completo (${n}/${h.cupos})`, 'warning');
+  render();
+}
+async function eliminarReserva(id) {
+  const r = state.reservas.find(x => x.id === id); if (!r) return;
+  if (!confirm(`¿Eliminar la reserva de "${r.usuario_nombre}" en ${horarioDe(r.horario_id)?.etiqueta || ''} (${fmtCorto(r.fecha)})?\nEl cupo quedará libre.`)) return;
+  marcarOp(id);
+  const { error } = await api('DELETE', `reservas/${id}`);
+  if (error) { toast('No se pudo eliminar: ' + esc(error.message), 'error'); return; }
+  state.reservas = state.reservas.filter(x => x.id !== id);
+  if ($('#dlg').open && $('#dlg').dataset.reserva === id) $('#dlg').close();
+  render(); toast(`Cupo liberado (${esc(r.usuario_nombre)})`, 'success');
+}
+
+/* ---------- Usuarios ---------- */
+function abrirUsuario(u) {
+  const dlg = $('#dlg');
+  dlg.dataset.tipo = 'usuario'; dlg.dataset.usuario = u?.id || '';
+  dlg.innerHTML = `
+  <form class="dlg-form" id="form-usuario" novalidate>
+    <header class="dlg-head"><h3>${u ? '✏️ Editar usuario' : '➕ Nuevo usuario'}</h3><button type="button" class="btn-icon" data-close>✕</button></header>
+    <label>Nombre <span class="req">*</span><input name="nombre" required value="${esc(u?.nombre || '')}" placeholder="Nombre completo"></label>
+    <label>Programa <input name="programa" list="dl-programas" value="${esc(u?.programa || '')}" placeholder="Ej. Inglés básico"></label>
+    <datalist id="dl-programas">${distintos('programa').map(v => `<option value="${esc(v)}">`).join('')}</datalist>
+    <label>Notas <textarea name="notas" rows="2" placeholder="Opcional">${esc(u?.notas || '')}</textarea></label>
+    <div class="dlg-error" id="dlg-error" hidden></div>
+    <footer class="dlg-foot"><div class="spacer"></div><button type="button" class="btn-soft" data-close>Cancelar</button><button type="submit" class="btn-primary">Guardar</button></footer>
+  </form>`;
+  if (!dlg.open) dlg.showModal();
+  dlg.querySelector('[name=nombre]').focus();
+}
+async function guardarUsuario(form) {
+  const id = $('#dlg').dataset.usuario || null;
+  const nombre = form.nombre.value.trim(), programa = form.programa.value.trim() || null, notas = form.notas.value.trim() || null;
+  if (!nombre) { mostrarErrorDlg('Escribe el nombre.'); return; }
+  const res = id ? await api('PATCH', `usuarios/${id}`, { nombre, programa, notas })
+                 : await api('POST', 'usuarios', { nombre, programa, notas });
+  if (res.error) { mostrarErrorDlg(res.error.code === 'DUPLICADO' ? 'Ya existe un usuario con ese nombre.' : 'No se pudo guardar: ' + esc(res.error.message)); return; }
+  $('#dlg').close();
+  await cargarBase(); await cargarReservas(); render();
+  toast(`Usuario <b>${esc(nombre)}</b> guardado`, 'success');
+}
+async function eliminarUsuario(id) {
+  const u = state.usuarios.find(x => x.id === id); if (!u) return;
+  if (!confirm(`¿Eliminar a "${u.nombre}" del directorio?\nSus reservas existentes se conservan.`)) return;
+  const { error } = await api('DELETE', `usuarios/${id}`);
+  if (error) { toast('No se pudo eliminar: ' + esc(error.message), 'error'); return; }
+  state.usuarios = state.usuarios.filter(x => x.id !== id); render(); toast('Usuario eliminado', 'success');
+}
+
+/* ---------- Configuración: horarios ---------- */
+async function nuevoHorario() {
+  const ultimo = [...state.horarios].sort((a, b) => a.hora < b.hora ? -1 : 1).pop();
+  let H = 8; if (ultimo) { H = (Number(ultimo.hora.slice(0, 2)) + 1) % 24; }
+  const hora = `${pad(H)}:00`;
+  const orden = Math.max(0, ...state.horarios.map(h => h.orden)) + 1;
+  const { error } = await api('POST', 'horarios', { etiqueta: etiquetaDesdeHora(hora), hora, cupos: 3, orden });
+  if (error) { toast('No se pudo crear: ' + esc(error.message), 'error'); return; }
+  await cargarBase(); render(); toast('Horario agregado. Ajusta la hora, etiqueta y cupos.', 'success');
+}
+async function borrarHorario(id) {
+  const h = horarioDe(id); if (!h) return;
+  const count = (await api('GET', `reservas/contar?horario_id=${id}`)).data?.count || 0;
+  if (!confirm(`¿Eliminar el horario "${h.etiqueta}"?\n${count ? `⚠️ Se eliminarán también sus ${count} reserva(s) (de todas las fechas).` : 'No tiene reservas.'}\n\nSi solo quieres ocultarlo, mejor desactívalo.`)) return;
+  const { error } = await api('DELETE', `horarios/${id}`);
+  if (error) { toast('No se pudo eliminar: ' + esc(error.message), 'error'); return; }
+  await cargarBase(); await cargarReservas(); render(); toast('Horario eliminado', 'success');
+}
+async function moverHorario(id, dir) {
+  const lista = [...state.horarios]; const i = lista.findIndex(h => h.id === id), j = i + dir;
+  if (i < 0 || j < 0 || j >= lista.length) return;
+  [lista[i], lista[j]] = [lista[j], lista[i]];
+  await api('POST', 'horarios/orden', { ids: lista.map(h => h.id) });
+  await cargarBase(); render();
+}
+/* ---------- Configuración: profesores ---------- */
+async function nuevoProfesor() {
+  const colores = ['#2563eb', '#ea580c', '#16a34a', '#9333ea', '#db2777', '#0891b2', '#ca8a04'];
+  const color = colores[state.profesores.length % colores.length];
+  const { error } = await api('POST', 'profesores', { nombre: `Profesor ${state.profesores.length + 1}`, color, orden: state.profesores.length + 1 });
+  if (error) { toast('No se pudo crear: ' + esc(error.message), 'error'); return; }
+  await cargarBase(); render(); toast('Profesor agregado. Escribe su nombre.', 'success');
+}
+async function borrarProfesor(id) {
+  const p = profesorDe(id); if (!p) return;
+  if (state.profesores.filter(x => x.activo).length <= 1 && p.activo) { toast('Debe quedar al menos un profesor activo.', 'error'); return; }
+  if (!confirm(`¿Eliminar a "${p.nombre}"?\nSus reservas se conservan (mostrarán el nombre guardado).`)) return;
+  const { error } = await api('DELETE', `profesores/${id}`);
+  if (error) { toast('No se pudo eliminar: ' + esc(error.message), 'error'); return; }
+  await cargarBase(); render(); if (!state.yo) abrirSelectorProfesor();
+}
+async function cambiarCampo(el) {
+  const tabla = el.dataset.tabla, id = el.dataset.id, campo = el.dataset.campo;
+  let valor = el.type === 'checkbox' ? el.checked : el.value;
+  const extra = {};
+  if (campo === 'cupos') { valor = Math.max(1, Math.min(50, parseInt(valor, 10) || 1)); el.value = valor; }
+  if (campo === 'hora') { if (!valor) return; const h = horarioDe(id); if (h && h.etiqueta === etiquetaDesdeHora(h.hora)) extra.etiqueta = etiquetaDesdeHora(valor); }
+  if ((campo === 'etiqueta' || campo === 'nombre') && !String(valor).trim()) { toast('El nombre no puede estar vacío.', 'error'); await cargarBase(); render(); return; }
+  if (campo === 'activo' && tabla === 'profesores' && !valor && state.profesores.filter(x => x.activo).length <= 1) { toast('Debe quedar al menos un profesor activo.', 'error'); el.checked = true; return; }
+  const { error } = await api('PATCH', `${tabla}/${id}`, { [campo]: valor, ...extra });
+  if (error) { toast('No se pudo guardar: ' + esc(error.message), 'error'); return; }
+  toast('Guardado ✓', 'success', null, 1200);
+  await cargarBase(); render();
+}
+
+/* ---------- Datos: exportar / limpiar ---------- */
+function descargar(nombre, contenido, tipo) {
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([contenido], { type: tipo + ';charset=utf-8' })); a.download = nombre; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1500);
+}
+async function exportarCSV() {
+  const desde = $('#exp-desde').value, hasta = $('#exp-hasta').value;
+  if (!desde || !hasta) return toast('Elige el rango de fechas.', 'error');
+  const { data, error } = await api('GET', `reservas?desde=${desde}&hasta=${hasta}`);
+  if (error) return toast('Error: ' + esc(error.message), 'error');
+  const cell = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
+  const filas = [['Fecha', 'Día', 'Horario', 'N°', 'Usuario', 'Programa', 'Guía', 'Reservado por', 'Registrado']];
+  const contador = {};
+  for (const r of data) {
+    const k = r.fecha + r.horario_id; contador[k] = (contador[k] || 0) + 1;
+    filas.push([r.fecha, DIAS[fromISO(r.fecha).getDay()], horarioDe(r.horario_id)?.etiqueta || '', contador[k], r.usuario_nombre, r.programa, r.guia, profesorDe(r.profesor_id)?.nombre || r.profesor_nombre || '', new Date(r.created_at).toLocaleString('es-PE')]);
+  }
+  descargar(`reservas_${desde}_a_${hasta}.csv`, '\ufeff' + filas.map(f => f.map(cell).join(';')).join('\r\n'), 'text/csv');
+  toast(`CSV exportado (${data.length} reservas)`, 'success');
+}
+async function exportarJSON() {
+  const { data, error } = await api('GET', 'respaldo');
+  if (error) return toast('Error: ' + esc(error.message), 'error');
+  descargar(`respaldo_reservas_${hoyISO()}.json`, JSON.stringify(data, null, 2), 'application/json');
+  toast('Copia de seguridad descargada', 'success');
+}
+async function limpiarAntiguas() {
+  const desde = $('#exp-desde').value; if (!desde) return toast('Elige la fecha “Desde”.', 'error');
+  const count = (await api('GET', `reservas/contar?antes=${desde}`)).data?.count || 0;
+  if (!count) return toast('No hay reservas anteriores a esa fecha.', 'info');
+  if (!confirm(`Se eliminarán ${count} reserva(s) anteriores al ${fmtLargo(desde)}.\nEsta acción no se puede deshacer. ¿Continuar?`)) return;
+  const { error } = await api('DELETE', `reservas?antes=${desde}`);
+  if (error) return toast('Error: ' + esc(error.message), 'error');
+  await cargarReservas(); render(); toast(`${count} reserva(s) eliminadas`, 'success');
+}
+
+/* ---------------------------------------------------------------------
+   Toasts
+   --------------------------------------------------------------------- */
+function toast(html, tipo = 'info', color = null, ms = 4200) {
+  const el = document.createElement('div'); el.className = `toast ${tipo}`; if (color) el.style.setProperty('--c', color);
+  el.innerHTML = html; $('#toasts').appendChild(el);
+  void el.offsetWidth; el.classList.add('show');
+  setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.remove(), 300); }, ms);
+}
+
+/* ---------------------------------------------------------------------
+   Navegación y eventos
+   --------------------------------------------------------------------- */
+async function irDia(iso) {
+  if (!iso) return;
+  state.fecha = iso;
+  if (lunesDe(iso) !== state.semana) await cargarReservas();
+  render();
+}
+async function cambiarTab(t) {
+  state.tab = t; render();
+  if (t === 'usuarios') { await cargarProximas(); render(); }
+}
+async function onClickApp(e) {
+  const el = e.target.closest('[data-action]'); if (!el) return;
+  const a = el.dataset.action, id = el.dataset.id;
+  switch (a) {
+    case 'dia-prev':   return irDia(addDays(state.fecha, -1));
+    case 'dia-next':   return irDia(addDays(state.fecha, 1));
+    case 'dia-hoy':    return irDia(hoyISO());
+    case 'ir-dia':     state.tab = 'dia'; return irDia(el.dataset.fecha);
+    case 'semana-prev': return irDia(addDays(state.fecha, -7));
+    case 'semana-next': return irDia(addDays(state.fecha, 7));
+    case 'semana-hoy': return irDia(hoyISO());
+    case 'imprimir':   return window.print();
+    case 'reservar':   if (!state.yo) return abrirSelectorProfesor(); return abrirReserva({ fecha: el.dataset.fecha, horario_id: el.dataset.horario });
+    case 'editar':     { const r = state.reservas.find(x => x.id === id); if (r) abrirReserva({ fecha: r.fecha, horario_id: r.horario_id, reserva: r }); return; }
+    case 'eliminar':   return eliminarReserva(id);
+    case 'nuevo-usuario':    return abrirUsuario(null);
+    case 'editar-usuario':   return abrirUsuario(state.usuarios.find(u => u.id === id));
+    case 'eliminar-usuario': return eliminarUsuario(id);
+    case 'horario-nuevo':  return nuevoHorario();
+    case 'horario-borrar': return borrarHorario(id);
+    case 'horario-subir':  return moverHorario(id, -1);
+    case 'horario-bajar':  return moverHorario(id, 1);
+    case 'profesor-nuevo':  return nuevoProfesor();
+    case 'profesor-borrar': return borrarProfesor(id);
+    case 'exportar-csv':  return exportarCSV();
+    case 'exportar-json': return exportarJSON();
+    case 'limpiar-antiguas': return limpiarAntiguas();
+  }
+}
+function onChangeApp(e) {
+  const el = e.target;
+  if (el.dataset.tabla) return cambiarCampo(el);
+  if (el.id === 'fecha-input' && el.value) return irDia(el.value);
+  if (el.id === 'dias-semana') { state.diasSemana = Number(el.value); localStorage.setItem('rv_dias', el.value); render(); }
+}
+function bindEventos() {
+  $('#tabs').addEventListener('click', e => { const b = e.target.closest('button[data-tab]'); if (b) cambiarTab(b.dataset.tab); });
+  $('#yo-chip').addEventListener('click', abrirSelectorProfesor);
+  const app = $('#app');
+  app.addEventListener('click', onClickApp);
+  app.addEventListener('change', onChangeApp);
+  app.addEventListener('input', e => { if (e.target.id === 'buscar-usuarios') { state.busquedaUsuarios = e.target.value; const t = $('#tabla-usuarios'); if (t) morphHTML(t, tablaUsuarios()); } });
+
+  const dlg = $('#dlg');
+  dlg.addEventListener('click', e => {
+    if (e.target.closest('[data-close]')) return dlg.close();
+    const prof = e.target.closest('[data-prof]'); if (prof) return elegirProfesor(prof.dataset.prof);
+    if (e.target.closest('[data-action-dlg="eliminar"]')) return eliminarReserva(dlg.dataset.reserva);
+    if (e.target === dlg && state.yo) dlg.close();     // clic fuera del cuadro
+  });
+  dlg.addEventListener('submit', e => { e.preventDefault(); if (e.target.id === 'form-reserva') guardarReserva(e.target); else if (e.target.id === 'form-usuario') guardarUsuario(e.target); });
+  dlg.addEventListener('cancel', e => { if (!state.yo) e.preventDefault(); });
+  dlg.addEventListener('close', () => {
+    if (editando.actual) { editando.actual = null; publicarPresencia(); }
+    dlg.dataset.tipo = '';
+    if (!state.yo) setTimeout(abrirSelectorProfesor, 50);
+  });
+
+  document.addEventListener('keydown', e => {
+    if ($('#dlg').open || /^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement?.tagName)) return;
+    if (state.tab === 'dia') { if (e.key === 'ArrowLeft') irDia(addDays(state.fecha, -1)); if (e.key === 'ArrowRight') irDia(addDays(state.fecha, 1)); }
+    if (state.tab === 'semana') { if (e.key === 'ArrowLeft') irDia(addDays(state.fecha, -7)); if (e.key === 'ArrowRight') irDia(addDays(state.fecha, 7)); }
+  });
+  window.addEventListener('online', () => conectarRealtime());
+  window.addEventListener('offline', () => setConexion('offline'));
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) { conectarRealtime(); refrescarTodo(); publicarPresencia(); } });
+  window.addEventListener('pagehide', () => { try { if (ws && ws.readyState === 1) ws.send(JSON.stringify({ t: 'adios' })); } catch {} });
+  setInterval(() => { if (!document.hidden && state.conexion === 'online') cargarReservas().then(() => { render(); actualizarDialogo(); }); }, 60000);
+}
+
+/* ---------------------------------------------------------------------
+   Inicio
+   --------------------------------------------------------------------- */
+async function init() {
+  try { state.yo = JSON.parse(localStorage.getItem('rv_yo') || 'null'); } catch { state.yo = null; }
+  try { await cargarBase(); await cargarReservas(); }
+  catch (e) { $('#app').innerHTML = `<div class="vacio">⚠️ No se pudo conectar con el servidor: <b>${esc(e.message || e)}</b><br><button class="btn-soft" onclick="location.reload()" style="margin-top:10px">Reintentar</button></div>`; setConexion('offline'); return; }
+  bindEventos();
+  render();
+  conectarRealtime();
+  if (!state.yo) abrirSelectorProfesor();
+}
+init();
+// Acceso de solo lectura para depuración / pruebas automáticas (no afecta al uso normal)
+window.__reservas = { get state() { return state; }, get ws() { return ws; }, reconectar: conectarRealtime, refrescar: refrescarTodo };
+})();
+</script>
+</body>
+</html>

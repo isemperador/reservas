@@ -1,0 +1,13 @@
+{
+  "name": "lista-de-reservas",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Lista de reservas en tiempo real para profesores (Cloudflare Workers + Durable Objects)",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^4"
+  }
+}

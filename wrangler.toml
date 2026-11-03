@@ -1,0 +1,22 @@
+# Configuración de Cloudflare Workers para "Lista de Reservas"
+name = "reservas"
+main = "worker.js"
+compatibility_date = "2025-09-01"
+
+# index.html se incrusta dentro del Worker como texto (no hace falta carpeta de archivos estáticos)
+[[rules]]
+type = "Text"
+globs = ["**/*.html"]
+fallthrough = true
+
+# El Durable Object que guarda los datos y reparte el tiempo real
+[[durable_objects.bindings]]
+name = "SALA"
+class_name = "Sala"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Sala"]
+
+[observability]
+enabled = true
